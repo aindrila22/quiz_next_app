@@ -7,6 +7,7 @@ interface QuestionProps {
   question: {
     question: string
     options: string[]
+    correctAnswer: string
     timeLimit: number
   }
   onAnswer: (answer: string) => void
@@ -15,6 +16,10 @@ interface QuestionProps {
 
 export default function Question({ question, onAnswer, onTimeout }: QuestionProps) {
   const [timeLeft, setTimeLeft] = useState(question.timeLimit)
+
+  useEffect(() => {
+    setTimeLeft(question.timeLimit) // Reset timer when a new question appears
+  }, [question])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -29,7 +34,7 @@ export default function Question({ question, onAnswer, onTimeout }: QuestionProp
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [onTimeout])
+  }, [question, onTimeout])
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
@@ -53,4 +58,3 @@ export default function Question({ question, onAnswer, onTimeout }: QuestionProp
     </div>
   )
 }
-
