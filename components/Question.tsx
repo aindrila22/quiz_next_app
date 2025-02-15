@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 
 interface QuestionProps {
@@ -16,24 +16,32 @@ interface QuestionProps {
 
 export default function Question({ question, onAnswer, onTimeout }: QuestionProps) {
   const [timeLeft, setTimeLeft] = useState(question.timeLimit)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     setTimeLeft(question.timeLimit) // Reset timer when a new question appears
   }, [question])
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    if (timerRef.current) clearInterval(timerRef.current) // Clear existing timer
+
+    timerRef.current = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
-          clearInterval(timer)
-          onTimeout()
+          clearInterval(timerRef.current!)
+          // Defer the call to onTimeout to avoid updating parent state during render
+          setTimeout(() => {
+            onTimeout()
+          }, 0)
           return 0
         }
         return prevTime - 1
       })
     }, 1000)
 
-    return () => clearInterval(timer)
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
   }, [question, onTimeout])
 
   return (
@@ -41,7 +49,11 @@ export default function Question({ question, onAnswer, onTimeout }: QuestionProp
       <h2 className="text-xl font-semibold mb-4">{question.question}</h2>
       <div className="space-y-2">
         {question.options.map((option, index) => (
-          <Button key={index} onClick={() => onAnswer(option)} className="w-full text-left justify-start">
+          <Button
+            key={index}
+            onClick={() => onAnswer(option)}
+            className="w-full text-left justify-start"
+          >
             {option}
           </Button>
         ))}
